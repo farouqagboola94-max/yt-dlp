@@ -181,6 +181,10 @@ from .bandlab import (
     BandlabPlaylistIE,
 )
 from .bannedvideo import BannedVideoIE
+from .boomplay import (
+    BoomplayIE,
+    BoomplayPlaylistIE,
+)
 from .bbc import (
     BBCIE,
     BBCCoUkArticleIE,
