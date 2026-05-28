@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>yt-dlp Web</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 1.5rem;
+    }
+
+    .url-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 0.7rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: #ff4444; }
+
+    button {
+      background: #ff4444;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.7rem 1.2rem;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #cc3333; }
+    button:disabled { background: #444; cursor: not-allowed; }
+
+    .mode-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .mode-btn {
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.9rem;
+    }
+
+    .mode-btn.active {
+      background: #ff4444;
+      border-color: #ff4444;
+      color: #fff;
+    }
+
+    /* Preview card */
+    #preview {
+      display: none;
+    }
+
+    .thumb-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    #thumb {
+      width: 120px;
+      height: 68px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #111;
+    }
+
+    .meta { flex: 1; }
+    .meta strong { display: block; font-size: 0.95rem; color: #fff; margin-bottom: 0.3rem; }
+    .meta span { font-size: 0.8rem; color: #888; }
+
+    /* Progress */
+    #progress-wrap {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .progress-bar-bg {
+      background: #222;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    #progress-bar {
+      background: linear-gradient(90deg, #ff4444, #ff7700);
+      height: 100%;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    #status-text {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .done-msg {
+      color: #44ff88;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .error-msg {
+      color: #ff6666;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      word-break: break-word;
+    }
+
+    /* Jobs list */
+    #jobs-card { display: none; }
+    .job-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #222;
+      font-size: 0.82rem;
+    }
+    .job-item:last-child { border-bottom: none; }
+    .job-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-running { background: #ffaa00; }
+    .dot-done    { background: #44ff88; }
+    .dot-error   { background: #ff4444; }
+    .dot-queued  { background: #888; }
+
+    .site-list {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>&gt;_ yt-dlp</h1>
+  <p class="subtitle">farouqagboola94-max fork &bull; v2026.03.17 &bull; 1,800+ sites</p>
+
+  <!-- Main input card -->
+  <div class="card">
+    <div class="url-row">
+      <input type="text" id="url-input" placeholder="Paste a YouTube, TikTok, Instagram, Boomplay… URL" autocomplete="off">
+      <button id="inspect-btn" onclick="inspectUrl()">Inspect</button>
+    </div>
+
+    <div class="mode-row">
+      <span style="font-size:0.8rem;color:#666;align-self:center">Quality:</span>
+      <button class="mode-btn active" data-mode="best"  onclick="setMode(this)">Best</button>
+      <button class="mode-btn"        data-mode="1080"  onclick="setMode(this)">1080p</button>
+      <button class="mode-btn"        data-mode="720"   onclick="setMode(this)">720p</button>
+      <button class="mode-btn"        data-mode="audio" onclick="setMode(this)">Audio MP3</button>
+    </div>
+
+    <p class="site-list">YouTube &bull; TikTok &bull; Instagram &bull; X/Twitter &bull; Facebook &bull; Boomplay &bull; SoundCloud &bull; Twitch &bull; Vimeo &bull; <a href="#" style="color:#555">+1800 more</a></p>
+  </div>
+
+  <!-- Preview card (shown after Inspect) -->
+  <div class="card" id="preview">
+    <div class="thumb-row">
+      <img id="thumb" src="" alt="thumbnail">
+      <div class="meta">
+        <strong id="meta-title">—</strong>
+        <span id="meta-uploader"></span><br>
+        <span id="meta-dur"></span>
+        <span id="meta-ext" style="margin-left:0.5rem;background:#222;padding:2px 6px;border-radius:4px;font-size:0.75rem"></span>
+      </div>
+    </div>
+    <div style="margin-top:1rem">
+      <button id="dl-btn" onclick="startDownload()" style="width:100%">Download</button>
+    </div>
+    <div id="progress-wrap">
+      <div class="progress-bar-bg"><div id="progress-bar"></div></div>
+      <span id="status-text">Starting…</span>
+    </div>
+  </div>
+
+  <!-- Jobs history -->
+  <div class="card" id="jobs-card">
+    <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.75rem;color:#aaa">Download history</div>
+    <div id="jobs-list"></div>
+  </div>
+
+<script>
+  let currentMode = 'best';
+  let currentJobId = null;
+  let pollTimer = null;
+  const jobHistory = [];
+
+  function setMode(el) {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentMode = el.dataset.mode;
+  }
+
+  async function inspectUrl() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) return;
+
+    const btn = document.getElementById('inspect-btn');
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    try {
+      const res = await fetch('/api/info', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url})
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+
+      document.getElementById('meta-title').textContent    = data.title || '—';
+      document.getElementById('meta-uploader').textContent = data.uploader || '';
+      document.getElementById('meta-dur').textContent      = data.duration || '';
+      document.getElementById('meta-ext').textContent      = data.extractor || '';
+      const thumb = document.getElementById('thumb');
+      thumb.src = data.thumbnail || '';
+      thumb.style.display = data.thumbnail ? '' : 'none';
+
+      document.getElementById('preview').style.display = 'block';
+      document.getElementById('progress-wrap').style.display = 'none';
+      document.getElementById('dl-btn').disabled = false;
+      document.getElementById('dl-btn').textContent = 'Download';
+    } catch(e) {
+      alert('Network error: ' + e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Inspect';
+    }
+  }
+
+  async function startDownload() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) return;
+
+    const btn = document.getElementById('dl-btn');
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+
+    document.getElementById('progress-wrap').style.display = 'block';
+    document.getElementById('progress-bar').style.width = '0%';
+    document.getElementById('status-text').textContent = 'Queued…';
+
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, mode: currentMode})
+    });
+    const {job_id} = await res.json();
+    currentJobId = job_id;
+
+    jobHistory.unshift({id: job_id, title: document.getElementById('meta-title').textContent, status: 'queued'});
+    renderJobs();
+
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => pollJob(job_id), 800);
+  }
+
+  async function pollJob(job_id) {
+    const res = await fetch(`/api/status/${job_id}`);
+    const job = await res.json();
+
+    document.getElementById('progress-bar').style.width = (job.progress || 0) + '%';
+    document.getElementById('status-text').textContent =
+      job.status === 'done'    ? `Done! ${job.filename || ''}` :
+      job.status === 'error'   ? `Error: ${job.error || ''}` :
+      job.status === 'running' ? `${Math.round(job.progress || 0)}% — ${job.log || ''}` :
+                                  'Queued…';
+
+    const idx = jobHistory.findIndex(j => j.id === job_id);
+    if (idx !== -1) { jobHistory[idx].status = job.status; jobHistory[idx].filename = job.filename; }
+    renderJobs();
+
+    if (job.status === 'done' || job.status === 'error') {
+      clearInterval(pollTimer);
+      document.getElementById('dl-btn').disabled = false;
+      document.getElementById('dl-btn').textContent = 'Download again';
+    }
+  }
+
+  function renderJobs() {
+    if (!jobHistory.length) return;
+    document.getElementById('jobs-card').style.display = 'block';
+    document.getElementById('jobs-list').innerHTML = jobHistory.slice(0,10).map(j => `
+      <div class="job-item">
+        <div class="job-dot dot-${j.status}"></div>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.title}</span>
+        <span style="color:#555;font-size:0.75rem">${j.status}</span>
+      </div>`).join('');
+  }
+
+  // Allow pressing Enter in the URL box
+  document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') inspectUrl();
+  });
+</script>
+</body>
+</html>
