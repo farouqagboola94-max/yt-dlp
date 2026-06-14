@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "yt-dlp Download",
+  "version": "1.0.0",
+  "description": "One-click video downloader powered by your local yt-dlp installation. Supports YouTube, TikTok, Instagram, Boomplay, and 1800+ sites.",
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications"
+  ],
+
+  "host_permissions": [
+    "http://localhost:5000/*",
+    "http://127.0.0.1:5000/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.youtube.com/watch*",
+        "*://youtube.com/watch*",
+        "*://youtu.be/*",
+        "*://www.youtube.com/shorts/*",
+        "*://www.tiktok.com/*",
+        "*://tiktok.com/*",
+        "*://www.instagram.com/p/*",
+        "*://www.instagram.com/reel/*",
+        "*://www.instagram.com/tv/*",
+        "*://twitter.com/*/status/*",
+        "*://x.com/*/status/*",
+        "*://www.facebook.com/*/videos/*",
+        "*://www.facebook.com/watch*",
+        "*://www.boomplay.com/songs/*",
+        "*://boomplay.com/songs/*",
+        "*://soundcloud.com/*/*",
+        "*://vimeo.com/*",
+        "*://clips.twitch.tv/*",
+        "*://www.twitch.tv/*/clip/*",
+        "*://www.reddit.com/r/*/comments/*",
+        "*://www.dailymotion.com/video/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "yt-dlp Download"
+  },
+
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

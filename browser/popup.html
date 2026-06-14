@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>yt-dlp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      min-width: 280px;
+      padding: 0;
+    }
+
+    header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #222;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ff4444;
+      letter-spacing: -0.5px;
+    }
+
+    .server-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #555;
+      transition: background 0.3s;
+    }
+    .server-dot.online  { background: #22cc66; }
+    .server-dot.offline { background: #cc2222; }
+
+    .server-label { font-size: 11px; color: #666; margin-left: 6px; }
+
+    .section {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    /* Page info */
+    #page-title {
+      color: #ddd;
+      font-weight: 600;
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #page-meta { color: #666; font-size: 11px; }
+
+    #thumb-wrap {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #1a1a1a;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    #thumb { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+    /* Quality grid */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .mode-btn {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 7px;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 0;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .mode-btn:hover { background: #2a2a2a; }
+    .mode-btn.active {
+      background: #ff4444;
+      border-color: #ff4444;
+      color: #fff;
+    }
+
+    /* Download button */
+    #dl-btn {
+      width: 100%;
+      background: #ff4444;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px;
+      margin-top: 10px;
+      transition: background 0.15s;
+    }
+
+    #dl-btn:hover:not(:disabled) { background: #cc2222; }
+    #dl-btn:disabled { background: #333; color: #666; cursor: default; }
+
+    /* Progress */
+    #progress-section { display: none; }
+
+    .bar-bg {
+      background: #222;
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+
+    #pbar {
+      background: linear-gradient(90deg, #ff4444, #ff8800);
+      height: 100%;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    #status-text { color: #888; font-size: 11px; }
+
+    /* Server offline warning */
+    #offline-warn {
+      display: none;
+      background: #2a1a1a;
+      border: 1px solid #5a2222;
+      border-radius: 7px;
+      color: #cc6666;
+      font-size: 11px;
+      padding: 8px 10px;
+      line-height: 1.5;
+    }
+
+    #offline-warn code {
+      background: #1a1a1a;
+      border-radius: 3px;
+      font-family: monospace;
+      padding: 1px 4px;
+    }
+
+    footer {
+      padding: 8px 16px;
+      color: #444;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">&gt;_ yt-dlp</span>
+    <span style="display:flex;align-items:center">
+      <span class="server-dot" id="server-dot"></span>
+      <span class="server-label" id="server-label">checking…</span>
+    </span>
+  </header>
+
+  <div class="section" id="page-section">
+    <div id="thumb-wrap"><img id="thumb" alt=""></div>
+    <div id="page-title">—</div>
+    <div id="page-meta"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Quality</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" data-mode="best"  onclick="setMode(this)">Best quality</button>
+      <button class="mode-btn"        data-mode="1080"  onclick="setMode(this)">1080p MP4</button>
+      <button class="mode-btn"        data-mode="720"   onclick="setMode(this)">720p MP4</button>
+      <button class="mode-btn"        data-mode="audio" onclick="setMode(this)">Audio MP3</button>
+    </div>
+
+    <div id="offline-warn">
+      yt-dlp server offline. Start it with:<br>
+      <code>yt-dlp-web</code>
+    </div>
+
+    <button id="dl-btn" onclick="download()" disabled>Download</button>
+  </div>
+
+  <div class="section" id="progress-section">
+    <div class="section-title">Progress</div>
+    <div class="bar-bg"><div id="pbar"></div></div>
+    <div id="status-text">—</div>
+  </div>
+
+  <footer>Powered by yt-dlp v2026.03.17 &bull; 1,800+ sites</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>
